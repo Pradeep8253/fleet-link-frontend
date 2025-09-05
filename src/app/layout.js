@@ -3,7 +3,7 @@
 import "./globals.css";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { FiPlusCircle, FiSearch, FiBook } from "react-icons/fi";
 import { getJson, postJson } from "./lib/api";
 import { ToastContainer } from "react-toastify";
@@ -41,7 +41,6 @@ export default function RootLayout({ children }) {
 
   const handleClick = (e, href) => {
     if (href === "/search-vehicle") return;
-
     if (!authChecked) {
       e.preventDefault();
       return;
@@ -115,7 +114,10 @@ export default function RootLayout({ children }) {
           </nav>
         </div>
 
-        <main className="mx-auto max-w-3xl p-6">{children}</main>
+        <main className="mx-auto max-w-3xl p-6">
+          <Suspense fallback={null}>{children}</Suspense>
+        </main>
+
         <ToastContainer position="top-center" autoClose={3000} />
       </body>
     </html>
