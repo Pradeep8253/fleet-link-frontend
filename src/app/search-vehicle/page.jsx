@@ -2,6 +2,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import api from "../lib/api";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+import {
+  FiCalendar,
+  FiClock,
+  FiSearch,
+  FiTruck,
+  FiMapPin,
+} from "react-icons/fi";
 
 function DateTimeDropdown({
   value,
@@ -12,10 +20,14 @@ function DateTimeDropdown({
   const [dateVal, setDateVal] = useState("");
   const [timeVal, setTimeVal] = useState("");
   const ref = useRef(null);
+  const dateRef = useRef(null);
+  const timeRef = useRef(null);
   const onChangeRef = useRef(onChange);
+
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
   useEffect(() => {
     if (open) {
       if (value) {
@@ -28,6 +40,7 @@ function DateTimeDropdown({
       }
     }
   }, [open, value]);
+
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e) => {
@@ -36,12 +49,14 @@ function DateTimeDropdown({
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && setOpen(false);
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
+
   const lastEmittedRef = useRef("");
   useEffect(() => {
     if (dateVal && timeVal) {
@@ -53,6 +68,7 @@ function DateTimeDropdown({
       setOpen(false);
     }
   }, [dateVal, timeVal]);
+
   const label =
     value && value.includes("T")
       ? new Date(value).toLocaleString("en-IN", {
@@ -64,15 +80,26 @@ function DateTimeDropdown({
           hour12: true,
         })
       : "";
+
+  const openDatePicker = () => {
+    if (dateRef.current?.showPicker) dateRef.current.showPicker();
+    else dateRef.current?.focus();
+  };
+  const openTimePicker = () => {
+    if (timeRef.current?.showPicker) timeRef.current.showPicker();
+    else timeRef.current?.focus();
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full text-left border rounded p-2 bg-white hover:bg-gray-50"
+        className="w-full text-left border rounded p-2 bg-white hover:bg-gray-50 flex items-center gap-2"
         aria-haspopup="dialog"
         aria-expanded={open}
       >
+        <FiCalendar className="shrink-0" />
         {label || <span className="text-gray-400">{placeholder}</span>}
       </button>
       {open && (
@@ -82,21 +109,28 @@ function DateTimeDropdown({
           className="absolute z-50 mt-2 w-[18rem] rounded-xl border bg-white shadow-lg p-3"
         >
           <div className="grid grid-cols-1 gap-3">
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600 mb-1">Date</label>
+            <div
+              className="flex items-center gap-2 border rounded p-2 cursor-pointer"
+              onClick={openDatePicker}
+            >
+              <FiCalendar />
               <input
+                ref={dateRef}
                 type="date"
-                className="border rounded p-2"
+                className="w-full outline-none"
                 value={dateVal}
                 onChange={(e) => setDateVal(e.target.value)}
-                autoFocus
               />
             </div>
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600 mb-1">Time</label>
+            <div
+              className="flex items-center gap-2 border rounded p-2 cursor-pointer"
+              onClick={openTimePicker}
+            >
+              <FiClock />
               <input
+                ref={timeRef}
                 type="time"
-                className="border rounded p-2"
+                className="w-full outline-none"
                 value={timeVal}
                 onChange={(e) => setTimeVal(e.target.value)}
               />
@@ -117,6 +151,28 @@ export default function SearchVehicle() {
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [isAuthed, setIsAuthed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await api.get("/api/auth/get");
+        if (!mounted) return;
+        setIsAuthed(!!data?.user);
+      } catch {
+        if (!mounted) return;
+        setIsAuthed(false);
+      } finally {
+        if (mounted) setAuthChecked(true);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const onChange = (e) =>
     setQ((s) => ({ ...s, [e.target.name]: e.target.value }));
@@ -141,6 +197,10 @@ export default function SearchVehicle() {
   }
 
   async function book(vehicleId) {
+    if (!isAuthed) {
+      router.push("/auth/login");
+      return;
+    }
     try {
       const payload = {
         vehicleId,
@@ -161,28 +221,37 @@ export default function SearchVehicle() {
       <h2 className="text-2xl font-semibold mb-4">Search &amp; Book</h2>
       <div className="bg-white p-4 rounded-xl border space-y-3">
         <div className="grid md:grid-cols-2 gap-3">
-          <input
-            className="border rounded p-2"
-            name="capacityRequired"
-            type="number"
-            placeholder="Capacity Required (KG)"
-            value={q.capacityRequired}
-            onChange={onChange}
-          />
-          <input
-            className="border rounded p-2"
-            name="fromPinCode"
-            placeholder="From Pincode"
-            value={q.fromPinCode}
-            onChange={onChange}
-          />
-          <input
-            className="border rounded p-2"
-            name="toPinCode"
-            placeholder="To Pincode"
-            value={q.toPinCode}
-            onChange={onChange}
-          />
+          <div className="relative">
+            <input
+              className="w-full border rounded p-2 pl-10"
+              name="capacityRequired"
+              type="number"
+              placeholder="Capacity Required (KG)"
+              value={q.capacityRequired}
+              onChange={onChange}
+            />
+            <FiTruck className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+          <div className="relative">
+            <input
+              className="w-full border rounded p-2 pl-10"
+              name="fromPinCode"
+              placeholder="From Pincode"
+              value={q.fromPinCode}
+              onChange={onChange}
+            />
+            <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+          <div className="relative">
+            <input
+              className="w-full border rounded p-2 pl-10"
+              name="toPinCode"
+              placeholder="To Pincode"
+              value={q.toPinCode}
+              onChange={onChange}
+            />
+            <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
           <DateTimeDropdown
             value={q.startTime}
             onChange={setStartTime}
@@ -192,8 +261,9 @@ export default function SearchVehicle() {
         <button
           onClick={search}
           disabled={loading}
-          className="px-4 py-2 rounded bg-black text-white"
+          className="px-4 py-2 rounded bg-black text-white flex items-center gap-2"
         >
+          <FiSearch />
           {loading ? "Searching..." : "Search Availability"}
         </button>
       </div>
@@ -212,12 +282,14 @@ export default function SearchVehicle() {
                   Capacity: {v.capacityKg} kg
                 </div>
                 <div className="text-sm text-gray-700">Tyres: {v.tyres}</div>
-                <button
-                  onClick={() => book(v._id)}
-                  className="mt-3 px-3 py-2 rounded bg-blue-600 text-white"
-                >
-                  Book Now
-                </button>
+                {authChecked && (
+                  <button
+                    onClick={() => book(v._id)}
+                    className="mt-3 px-3 py-2 rounded bg-blue-600 text-white"
+                  >
+                    Book Now
+                  </button>
+                )}
               </li>
             ))}
           </ul>
