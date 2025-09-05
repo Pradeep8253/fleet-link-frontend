@@ -24,16 +24,18 @@ export default function RootLayout({ children }) {
 
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         const data = await getJson("/api/auth/get");
-        if (mounted && data?.user) setIsAuthed(true);
+        if (mounted) setIsAuthed(!!data?.user);
       } catch {
         if (mounted) setIsAuthed(false);
       } finally {
         if (mounted) setAuthChecked(true);
       }
     })();
+
     return () => {
       mounted = false;
     };
@@ -41,10 +43,12 @@ export default function RootLayout({ children }) {
 
   const handleClick = (e, href) => {
     if (href === "/search-vehicle") return;
+
     if (!authChecked) {
       e.preventDefault();
       return;
     }
+
     if (!isAuthed) {
       e.preventDefault();
       router.push(`/auth/login?redirect=${encodeURIComponent(href)}`);
@@ -52,8 +56,12 @@ export default function RootLayout({ children }) {
   };
 
   const logout = async () => {
-    await postJson("/api/auth/logout", {});
-    router.push("/auth/login");
+    try {
+      await postJson("/api/auth/logout", {});
+    } finally {
+      setIsAuthed(false);
+      router.push("/auth/login");
+    }
   };
 
   return (
@@ -74,12 +82,34 @@ export default function RootLayout({ children }) {
                 </span>
               </Link>
 
-              <button
-                onClick={logout}
-                className="rounded-lg px-3 py-2 bg-black text-white"
-              >
-                Logout
-              </button>
+              {authChecked ? (
+                isAuthed ? (
+                  <button
+                    onClick={logout}
+                    className="rounded-lg px-3 py-2 bg-black text-white"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <Link
+                    href={
+                      pathname === "/auth/login"
+                        ? "/auth/login"
+                        : `/auth/login?redirect=${encodeURIComponent(
+                            pathname || "/"
+                          )}`
+                    }
+                    className="rounded-lg px-3 py-2 bg-blue-600 text-white"
+                  >
+                    Login
+                  </Link>
+                )
+              ) : (
+                <span
+                  className="h-9 w-20 rounded-lg bg-slate-200 animate-pulse"
+                  aria-hidden
+                />
+              )}
             </div>
           </div>
         </header>
