@@ -11,7 +11,7 @@ const tabs = [
   { href: "/my-bookings", label: "My Bookings", Icon: FiBook },
 ];
 
-export default function PrimaryNav() {
+export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthed, authChecked } = useAuth();

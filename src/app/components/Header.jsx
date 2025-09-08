@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { postJson } from "../lib/api";
 import { useAuth } from "./AuthProvider";
 
-export default function HeaderClient() {
+export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthed, setIsAuthed, authChecked } = useAuth();

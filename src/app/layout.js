@@ -1,6 +1,7 @@
 import AuthProvider from "./components/AuthProvider";
-import HeaderClient from "./components/HeaderClient";
-import PrimaryNav from "./components/PrimaryNav";
+import Header from "./components/Header";
+import NavBar from "./components/NavBar";
+
 import "./globals.css";
 
 export const metadata = {
@@ -13,9 +14,9 @@ export default function RootLayout({ children }) {
     <html lang="en" className="h-full">
       <body className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-gray-900 antialiased">
         <AuthProvider>
-          <HeaderClient />
+          <Header />
           <div className="mx-auto max-w-3xl px-4 pt-6">
-            <PrimaryNav />
+            <NavBar />
           </div>
 
           <main className="mx-auto max-w-3xl p-6">{children}</main>
